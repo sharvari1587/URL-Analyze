@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>URL Analyzer</title>
+
+  <style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #f6f7fb;
+    margin: 0;
+    padding: 40px;
+    color: #111;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: auto;
+  }
+
+  h1 {
+    text-align: center;
+    margin-bottom: 30px;
+    font-weight: 600;
+  }
+
+  .card {
+    background: #fff;
+    padding: 22px;
+    border-radius: 12px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+    margin-top: 20px;
+  }
+
+  input {
+    width: 70%;
+    padding: 12px;
+    font-size: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    outline: none;
+  }
+
+  button {
+    padding: 12px 18px;
+    font-size: 15px;
+    border: none;
+    background: #2563eb;
+    color: white;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+
+  button:hover {
+    background: #1e4fd6;
+  }
+
+  .score {
+    font-size: 26px;
+    font-weight: bold;
+    color: #16a34a;
+  }
+
+  .risk {
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 999px;
+    display: inline-block;
+    font-size: 13px;
+  }
+
+  .risk-low {
+    background: #e8f5e9;
+    color: #2e7d32;
+  }
+
+  .risk-medium {
+    background: #fff8e1;
+    color: #f57f17;
+  }
+
+  .risk-high {
+    background: #ffebee;
+    color: #c62828;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-top: 15px;
+  }
+
+  .box {
+    background: #f9fafb;
+    padding: 14px;
+    border-radius: 10px;
+    border: 1px solid #eee;
+  }
+
+  .label {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 4px;
+  }
+
+  .value {
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  hr {
+    border: none;
+    border-top: 1px solid #eee;
+    margin: 16px 0;
+  }
+
+  pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+
+  .loading {
+    display: none;
+    margin-top: 10px;
+    color: #666;
+  }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <h1>🌐 URL Analyzer</h1>
+
+  <div class="card">
+    <input type="text" id="url" placeholder="Enter website URL">
+    <button onclick="analyze()">Analyze</button>
+    <div class="loading" id="loading">Analyzing website...</div>
+  </div>
+
+  <div id="result"></div>
+
+  <div class="card">
+    <h3>🧠 AI Analysis</h3>
+    <pre id="ai">No analysis yet</pre>
+  </div>
+
+</div>
+
+<script>
+async function analyze() {
+  const url = document.getElementById("url").value;
+
+  document.getElementById("loading").style.display = "block";
+
+  const res = await fetch("/analyze", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url })
+  });
+
+  const data = await res.json();
+
+  document.getElementById("loading").style.display = "none";
+
+  const riskClass =
+    data.riskLevel === "High"
+      ? "risk-high"
+      : data.riskLevel === "Medium"
+      ? "risk-medium"
+      : "risk-low";
+
+  const badge = (val) => {
+  return val
+    ? `<span class="risk risk-low">Yes</span>`
+    : `<span class="risk risk-high">No</span>`;
+};
+  document.getElementById("result").innerHTML = `
+  <div class="card">
+    <h2>Website Report</h2>
+
+    <p><b>URL:</b> ${data.url}</p>
+    <p><b>Score:</b> <span class="score">${data.score}</span></p>
+
+    <p>
+      <b>Risk Level:</b>
+      <span class="risk ${
+        data.riskLevel === "High"
+          ? "risk-high"
+          : data.riskLevel === "Medium"
+          ? "risk-medium"
+          : "risk-low"
+      }">
+        ${data.riskLevel}
+      </span>
+    </p>
+
+    <p><b>Load Time:</b> ${data.loadTime} ms</p>
+
+    <hr>
+
+    <h3>Security</h3>
+    <div class="grid">
+      <div class="box">
+        <div class="label">Email Forms</div>
+        <div class="value">${badge(data.dataCollection?.email)}</div>
+      </div>
+
+      <div class="box">
+        <div class="label">Password Forms</div>
+        <div class="value">${badge(data.dataCollection?.password)}</div>
+      </div>
+
+      <div class="box">
+        <div class="label">Phone Forms</div>
+        <div class="value">${badge(data.dataCollection?.phone)}</div>
+      </div>
+
+      <div class="box">
+        <div class="label">Text Forms</div>
+        <div class="value">${badge(data.dataCollection?.text)}</div>
+      </div>
+    </div>
+
+    <hr>
+
+    <h3>Tracking</h3>
+    <div class="grid">
+      <div class="box">
+        <div class="label">Google Analytics</div>
+        <div class="value">${badge(data.tracking?.googleAnalytics)}</div>
+      </div>
+
+      <div class="box">
+        <div class="label">Facebook Pixel</div>
+        <div class="value">${badge(data.tracking?.facebookPixel)}</div>
+      </div>
+
+      <div class="box">
+        <div class="label">Cookies</div>
+        <div class="value">${badge(data.tracking?.cookies)}</div>
+      </div>
+    </div>
+
+    <hr>
+
+    <h3>SEO</h3>
+    <div class="grid">
+      <div class="box">
+        <div class="label">Links</div>
+        <div class="value">${data.seo?.links}</div>
+      </div>
+
+      <div class="box">
+        <div class="label">Images</div>
+        <div class="value">${data.seo?.images}</div>
+      </div>
+
+      <div class="box">
+        <div class="label">Meta Description</div>
+        <div class="value">${badge(data.seo?.metaDescription)}</div>
+      </div>
+
+      <div class="box">
+        <div class="label">Contact Page</div>
+        <div class="value">${badge(data.seo?.hasContact)}</div>
+      </div>
+    </div>
+
+    <hr>
+
+    <h3>Suggestions</h3>
+    <pre>${(data.suggestions || []).length
+      ? data.suggestions.join("\n")
+      : "No issues found"}</pre>
+  </div>
+`;
+
+  document.getElementById("ai").innerText =
+    data.aiAnalysis || "No AI response";
+}
+</script>
+
+</body>
+</html>
