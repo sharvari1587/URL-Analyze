@@ -1,5 +1,5 @@
 const request = require("supertest");
-const app = require("../app"); // ✅ NOT server.js
+const app = require("../app"); 
 
 describe("URL Analyzer API", () => {
   it("should return analysis for a URL", async () => {
